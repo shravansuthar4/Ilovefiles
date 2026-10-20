@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>I love files – Install Guide</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 14mm; }
+  :root { --ink: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --blue: #0a6cff; --pink: #ff4f7e; --soft: #f5f5f7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); font: 10.5pt/1.5 -apple-system, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif; }
+  h1 { font-size: 26pt; margin: 0; letter-spacing: -0.5px; }
+  h2 { font-size: 15pt; margin: 0 0 8px; display: flex; align-items: center; gap: 10px; }
+  h3 { font-size: 11pt; margin: 14px 0 6px; }
+  p { margin: 0 0 8px; }
+  .hero { display: flex; align-items: center; gap: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+  .hero img { width: 74px; height: 74px; }
+  .tag { color: var(--muted); font-size: 11.5pt; margin-top: 2px; }
+  .pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0 18px; }
+  .pick div { background: var(--soft); border-radius: 12px; padding: 10px 12px; }
+  .pick b { display: block; font-size: 10pt; }
+  .pick code { display: block; font-size: 8.6pt; color: var(--blue); margin-top: 4px; word-break: break-word; font-family: inherit; font-weight: 600; }
+  .pick small { color: var(--muted); font-size: 8.6pt; }
+  section { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; break-inside: avoid; }
+  .os { font-size: 9pt; font-weight: 700; color: #fff; background: var(--ink); border-radius: 6px; padding: 2px 8px; }
+  .os.win { background: var(--blue); }
+  ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; }
+  ol li { counter-increment: step; position: relative; padding-left: 32px; margin-bottom: 8px; }
+  ol li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 21px; height: 21px; border-radius: 50%;
+    background: var(--pink); color: #fff; font-weight: 700; font-size: 9pt; display: flex; align-items: center; justify-content: center; }
+  .ui { font-weight: 600; background: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; white-space: nowrap; }
+  .note { background: #fff8e6; border-radius: 10px; padding: 8px 12px; font-size: 9.5pt; margin-top: 8px; }
+  .use { display: grid; grid-template-columns: 1fr 190px; gap: 16px; align-items: center; }
+  .use img { width: 190px; border-radius: 16px; }
+  kbd { font: 600 9.5pt inherit; border: 1px solid #c7c7cc; border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; background: #fff; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .two section { margin-bottom: 0; }
+  ul { margin: 4px 0 0; padding-left: 18px; }
+  li { margin-bottom: 4px; }
+  .page-break { break-before: page; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="images/icon.png" alt="">
+  <div>
+    <h1>I love files</h1>
+    <div class="tag">Drag any file, press <kbd>C</kbd>, drop it on a format, done. Install guide for Mac and Windows.</div>
+  </div>
+</div>
+
+<h3>1. Pick the right installer from the folder</h3>
+<div class="pick">
+  <div><b>Mac with an Apple chip</b><small>M1, M2, M3, M4 … (most Macs from 2021 on)</small>
+    <code>I love files - Mac (Apple Silicon).dmg</code></div>
+  <div><b>Mac with an Intel chip</b><small>Older Macs</small>
+    <code>I love files - Mac (Intel).dmg</code></div>
+  <div><b>Windows 10 or 11</b><small>Any normal Windows PC</small>
+    <code>I love files - Windows Setup.exe</code></div>
+</div>
+<p class="muted" style="margin-top:-8px">Not sure which Mac you have? Click the Apple menu (top-left) → <span class="ui">About This Mac</span>. It says <b>Chip: Apple M…</b> or <b>Processor: Intel</b>.</p>
+
+<section>
+  <h2><span class="os">Mac</span> Install on a Mac</h2>
+  <ol>
+    <li><b>Double-click</b> the <span class="ui">.dmg</span> file. A window opens with the <b>I love files</b> icon and an <b>Applications</b> folder.</li>
+    <li><b>Drag the I love files icon onto the Applications folder.</b> That’s the whole installation.</li>
+    <li>Open your <span class="ui">Applications</span> folder and <b>double-click I love files</b>.<br>
+      Your Mac may say it <i>can’t verify the app</i>. Click <span class="ui">Done</span>. That message is normal for apps shared outside the App Store.</li>
+    <li>Open <span class="ui">System Settings</span> → <span class="ui">Privacy &amp; Security</span>, scroll down, and next to <i>“I love files was blocked”</i> click
+      <span class="ui">Open Anyway</span>. Confirm with your password or Touch ID, then click <span class="ui">Open</span>. <span class="muted">(Only needed the first time.)</span></li>
+    <li>When asked to allow <b>Accessibility</b>, click <span class="ui">Open System Settings</span> and <b>switch on I love files</b>.
+      This lets the app notice the <kbd>C</kbd> key while you drag. If it also asks for <b>Input Monitoring</b>, switch that on too.</li>
+    <li>A small <b>♡ heart</b> appears in the menu bar at the top of the screen. You’re done: the app runs quietly and starts automatically when your Mac starts.</li>
+  </ol>
+  <div class="note">Tip: afterwards you can eject the “I love files” disk on the desktop or in the Finder sidebar, and delete the .dmg file.</div>
+</section>
+
+<section>
+  <h2><span class="os win">Windows</span> Install on Windows</h2>
+  <ol>
+    <li><b>Double-click</b> <span class="ui">I love files - Windows Setup.exe</span>.</li>
+    <li>If a blue box says <i>“Windows protected your PC”</i>, click <span class="ui">More info</span> and then <span class="ui">Run anyway</span>.
+      <span class="muted">This appears for new apps that aren’t from the Microsoft Store.</span></li>
+    <li>It installs by itself in a few seconds and starts right away. There’s nothing to click through.</li>
+    <li>A <b>pink heart</b> appears in the system tray, bottom-right next to the clock (it may be hidden under the <b>^</b> arrow).
+      The app starts automatically with Windows.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>♡ How to use it</h2>
+  <div class="use">
+    <ol>
+      <li><b>Start dragging</b> any file: a photo, song, video, Word document, PDF …</li>
+      <li>While still holding the mouse button, <b>tap <kbd>C</kbd></b>. A glass ring of formats appears around the file.</li>
+      <li><b>Move onto the format you want</b>: it turns <b style="color:var(--blue)">blue</b>.</li>
+      <li><b>Let go.</b> The converted file appears right next to the original. Your original is never changed.</li>
+    </ol>
+    <img src="images/ring.png" alt="The format ring around a dragged photo, with PNG highlighted">
+  </div>
+  <p class="muted" style="margin-top:6px">Changed your mind? Let go in the middle of the ring, or press <kbd>Esc</kbd>. Big videos keep converting in the background and you get a notification when they’re ready.</p>
+</section>
+
+<div class="two">
+  <section>
+    <h2 style="font-size:12pt">What it converts</h2>
+    <ul>
+      <li><b>Photos &amp; images:</b> JPG, PNG, PDF, WEBP, GIF, AVIF, TIFF, BMP, ICO (also opens iPhone HEIC photos)</li>
+      <li><b>Music:</b> MP3, WAV, M4A, FLAC, OGG, OPUS, AIFF, WMA</li>
+      <li><b>Video:</b> MP4, MOV, MKV, WEBM, AVI, WMV, plus video → GIF and video → MP3</li>
+      <li><b>Documents:</b> Word → PDF / HTML / TXT, PDF → images or text, text &amp; Markdown → PDF</li>
+    </ul>
+    <p class="muted" style="margin-top:8px">For Excel, PowerPoint and older Word files, install the free <b>LibreOffice</b> (libreoffice.org). I love files picks it up automatically, and the ring shows a <b>More…</b> shortcut to it.</p>
+  </section>
+  <section>
+    <h2 style="font-size:12pt">Something not working?</h2>
+    <ul>
+      <li><b>Mac, ring doesn’t appear:</b> System Settings → Privacy &amp; Security → <span class="ui">Accessibility</span>: make sure <b>I love files</b> is switched on (and under Input Monitoring, if listed). Click the ♡ heart in the menu bar to check its status.</li>
+      <li><b>Windows:</b> drag files from File Explorer or the desktop; the ring appears where your mouse is.</li>
+      <li>Make sure you press <kbd>C</kbd> <i>while</i> the mouse button is still held down.</li>
+    </ul>
+    <h3>Uninstall</h3>
+    <ul>
+      <li><b>Mac:</b> click the ♡ heart → <span class="ui">Quit I love files</span>, then drag the app from Applications to the Bin.</li>
+      <li><b>Windows:</b> Settings → Apps → <span class="ui">I love files</span> → Uninstall.</li>
+    </ul>
+  </section>
+</div>
+
+</body>
+</html>

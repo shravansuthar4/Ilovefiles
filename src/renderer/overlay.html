@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<style>
+  :root { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; }
+  html, body { margin: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; user-select: none; }
+  svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+  /* Liquid glass: a frosted translucent body, a bright rim that catches the light,
+     a soft sheen from the top and a floating shadow. */
+  .ring, .center { filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.22)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18)); }
+  .ring { transform-origin: 240px 240px; animation: bloom 220ms cubic-bezier(.2, .9, .25, 1.15); }
+  @keyframes bloom { from { transform: scale(0.82); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .glass { fill: url(#glass); }
+  .sheen { fill: url(#sheen); pointer-events: none; }
+  .rim { fill: none; stroke: url(#rim); stroke-width: 1.3; }
+  .zone > g { transition: transform 140ms cubic-bezier(.2, .9, .25, 1.2); transform-origin: 240px 240px; }
+  .zone .glass { transition: fill 120ms; }
+  .zone.hot .glass { fill: url(#glass-hot); }
+  .zone.hot .rim { stroke: url(#rim-hot); stroke-width: 1.6; }
+
+  text { fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none;
+    font-family: -apple-system, "SF Pro Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    paint-order: stroke; stroke: rgba(0, 0, 0, 0.22); stroke-width: 2.5px; stroke-linejoin: round; }
+  .zone text { font-weight: 650; letter-spacing: 0.3px; }
+  .zone.hint text { font-weight: 500; }
+  .zone.hot text { stroke: rgba(0, 40, 120, 0.35); }
+
+  .badge rect { fill: rgba(10, 132, 255, 0.9); stroke: rgba(255, 255, 255, 0.6); stroke-width: 0.8; }
+  .badge text { font-weight: 700; font-size: 11px; stroke: none; }
+  .status { font-size: 12px; font-weight: 600; }
+  .ok { fill: #34c759 !important; } .err { fill: #ff6b60 !important; }
+  .spin { transform-origin: 240px 240px; animation: spin 0.9s linear infinite; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Light Mode: brighter glass with dark labels, so it reads over white Finder windows too. */
+  @media (prefers-color-scheme: light) {
+    .glass { fill: url(#glass-light); }
+    text { fill: #1d1d1f; stroke: rgba(255, 255, 255, 0.55); }
+    .zone.hot text, .badge text { fill: #fff; stroke: rgba(0, 40, 120, 0.3); }
+    .spin { stroke: #1d1d1f; }
+    .ok { fill: #1f9d45 !important; } .err { fill: #d93025 !important; }
+  }
+</style>
+</head>
+<body>
+  <svg viewBox="0 0 480 480">
+    <defs>
+      <linearGradient id="glass" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="480">
+        <stop offset="0" stop-color="#8a8f9c" stop-opacity="0.42"/>
+        <stop offset="0.55" stop-color="#3c404a" stop-opacity="0.34"/>
+        <stop offset="1" stop-color="#2a2d35" stop-opacity="0.42"/>
+      </linearGradient>
+      <linearGradient id="glass-light" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="480">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
+        <stop offset="0.55" stop-color="#f2f3f7" stop-opacity="0.42"/>
+        <stop offset="1" stop-color="#dfe2ea" stop-opacity="0.5"/>
+      </linearGradient>
+      <linearGradient id="glass-hot" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="480">
+        <stop offset="0" stop-color="#4aa3ff" stop-opacity="0.88"/>
+        <stop offset="1" stop-color="#0a6cff" stop-opacity="0.78"/>
+      </linearGradient>
+      <radialGradient id="sheen" gradientUnits="userSpaceOnUse" cx="200" cy="40" r="300">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.32"/>
+        <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.04"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="60" y1="20" x2="420" y2="460">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+        <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.22"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+      </linearGradient>
+      <linearGradient id="rim-hot" gradientUnits="userSpaceOnUse" x1="60" y1="20" x2="420" y2="460">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+        <stop offset="0.5" stop-color="#bfe0ff" stop-opacity="0.6"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0.9"/>
+      </linearGradient>
+    </defs>
+    <g id="svg"></g>
+  </svg>
+<script src="overlay.js"></script>
+</body>
+</html>
