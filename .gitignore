@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# build output (installers go on GitHub Releases, not in git)
+dist/
+release/
+
+# native binaries, downloaded by `npm run setup`
+vendor/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

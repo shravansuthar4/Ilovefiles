@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<canvas id="c"></canvas>
+<script type="module">
+  import * as pdfjs from '../../node_modules/pdfjs-dist/build/pdf.mjs';
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL('../../node_modules/pdfjs-dist/build/pdf.worker.mjs', import.meta.url).href;
+
+  let doc = null;
+  const canvas = document.getElementById('c');
+
+  window.openPdf = async (base64) => {
+    const data = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    doc = await pdfjs.getDocument({ data }).promise;
+    return doc.numPages;
+  };
+
+  // 2x scale ≈ 144 dpi, sharp enough for screens and printing.
+  window.renderPage = async (n, mime) => {
+    const page = await doc.getPage(n);
+    const viewport = page.getViewport({ scale: 2 });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas.toDataURL(mime, 0.92);
+  };
+
+  window.allText = async () => {
+    const pages = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      const content = await (await doc.getPage(n)).getTextContent();
+      pages.push(content.items.map((i) => i.str + (i.hasEOL ? '\n' : '')).join(''));
+    }
+    return pages.join('\n\n');
+  };
+</script>
