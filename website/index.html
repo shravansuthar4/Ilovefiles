@@ -168,11 +168,15 @@
       <p class="lede">Convert any file by dragging it.<br><b>Drag, press <kbd>C</kbd>, drop.</b> The new file appears right next to the original.</p>
 
       <div class="downloads" id="downloads">
-        <a class="dl" id="dl-mac" data-os="mac" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1E5DnybwRr_3JA_ZoKSLFp-hV9gCg-qe_" download>
+        <a class="dl" id="dl-mac" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1_kQ6FDK4SKQR9i8KT4WyrhIQcbAYvm44" download>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-          Download for Mac <small id="mac-chip">Apple silicon</small>
+          Download for Mac <small>Apple silicon</small>
         </a>
-        <a class="dl" id="dl-win" data-os="win" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1MrhVnE4hhYM2BcOfvbe-tzMeNf3tdQip" download>
+        <a class="dl" id="dl-intel" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1G6ixGjXvRmHSn9nKTbwbRP5NXWakuPif" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          Download for Mac <small>Intel</small>
+        </a>
+        <a class="dl" id="dl-win" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1rimwy3qw_7WjwB6mqljurn2NyDAJOOSB" download>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
           Download for Windows
         </a>
@@ -180,7 +184,7 @@
       <p class="meta">
         Free<span class="sep">·</span>macOS &amp; Windows 10/11<span class="sep">·</span>
         <a href="#install">How to install</a><span class="sep">·</span>
-        <a href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1gBg3wkQQt7oHA_7aMnOFFfbb9DApeE8w" download>Install guide (PDF)</a>
+        <a href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1n7ieoA9vLRnuU3avnEeN0iLio9LImxhF" download>Install guide (PDF)</a>
       </p>
 
       <div class="shot">
@@ -224,7 +228,7 @@
         <div class="card">
           <h3>Mac</h3>
           <ol class="install">
-            <li>Click <b>Download for Mac</b> and open the downloaded <b>.dmg</b> file.</li>
+            <li>Click <b>Download for Mac</b>: <b>Apple silicon</b> for M-series Macs, <b>Intel</b> for older ones (not sure? Apple menu → <b>About This Mac</b>). Open the downloaded <b>.dmg</b> file.</li>
             <li>Drag the <b>I love files</b> icon onto the <b>Applications</b> folder.</li>
             <li>Open <b>Applications</b> and double-click <b>I love files</b>. If your Mac says it can’t verify the app, click <b>Done</b>.</li>
             <li>Go to <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>, then <b>Open</b>. Only needed the first time.</li>
@@ -264,10 +268,19 @@
   (function () {
     const ua = navigator.userAgent;
     const os = /Windows/.test(ua) ? 'win' : /Macintosh|Mac OS X/.test(ua) ? 'mac' : null;
-    const mac = document.getElementById('dl-mac'), win = document.getElementById('dl-win');
-    const primary = os === 'win' ? win : mac;
+    const mac = document.getElementById('dl-mac'), intel = document.getElementById('dl-intel'), win = document.getElementById('dl-win');
+    let primary = os === 'win' ? win : mac;
+    // Intel Macs: browsers all report "Intel" in the user agent, but the graphics chip gives it away.
+    if (os === 'mac') {
+      try {
+        const gl = document.createElement('canvas').getContext('webgl');
+        const info = gl && gl.getExtension('WEBGL_debug_renderer_info');
+        const gpu = info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : '';
+        if (/Intel|AMD|Radeon/i.test(gpu) && !/Apple/i.test(gpu)) primary = intel;
+      } catch (e) {}
+    }
     primary.classList.add('primary');
-    if (os === 'win') document.getElementById('downloads').prepend(win);
+    document.getElementById('downloads').prepend(primary);
   })();
 </script>
 </body>
