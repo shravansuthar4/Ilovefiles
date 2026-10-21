@@ -10,14 +10,16 @@ const sharp = require('sharp');
 const { uIOhook, UiohookKey } = require('uiohook-napi');
 const { FORMATS, fromMime } = require('./formats');
 const { detect, convert, targetsFor, hasLibreOffice } = require('./converter');
+const { compress, compressLevels, LEVELS } = require('./compressor');
 const dragSource = require('./drag-source');
 
 const isMac = process.platform === 'darwin';
-const RING_SIZE = 480; // the overlay is a square window centred on the cursor
+const RING_SIZE = 600; // the overlay is a square window centred on the cursor (room for the compress ring)
 const LIBREOFFICE_URL = 'https://www.libreoffice.org/download/download/';
 
 // DC_DEBUG=1 npm start  -> logs every step of drag + C detection
 const debug = process.env.DC_DEBUG ? (...a) => console.log('[dc]', ...a) : () => {};
+if (process.env.DC_DEBUG) process.on('unhandledRejection', (err) => debug('unhandled error:', err && err.stack));
 
 let overlay = null;
 let tray = null;
@@ -165,6 +167,7 @@ async function describe(files) {
     name: files.length === 1 ? path.basename(files[0]) : `${files.length} files`,
     targets,
     moreWithLibreOffice,
+    compress: compressLevels(id),
   };
 }
 
@@ -185,7 +188,51 @@ async function released() {
   // Files not identified up front: use the paths from the drop itself, if it reached the ring.
   const files = s.files.length ? s.files : await waitForDrop(600);
   if (!files.length) return closeOverlay();
-  runConversion(files, s.hovered);
+  if (s.hovered.startsWith('compress:')) runCompression(files, s.hovered.slice('compress:'.length));
+  else runConversion(files, s.hovered);
+}
+
+const formatSize = (bytes) => (bytes < 1024 * 1024
+  ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+  : `${(bytes / 1024 / 1024).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`);
+
+async function runCompression(files, level) {
+  const label = LEVELS.find((l) => l.id === level).label;
+  overlay.webContents.send('overlay:status', { state: 'working' });
+
+  let backgrounded = false;
+  const slow = setTimeout(() => { backgrounded = true; closeOverlay(); }, 1500);
+
+  const results = await processAll(files, async (input, onProgress) => {
+    const r = await compress(input, level, onProgress);
+    return { outputs: [r.output], before: r.before, after: r.after };
+  });
+  clearTimeout(slow);
+  debug('compress results', results);
+
+  const ok = results.filter((r) => r.output);
+  const before = ok.reduce((n, r) => n + r.before, 0);
+  const after = ok.reduce((n, r) => n + r.after, 0);
+  const saved = `−${Math.round(100 - (after / before) * 100)}%`;
+  let status;
+  if (ok.length) {
+    status = { state: 'done', message: ok.length === 1 ? saved : `${ok.length} files ${saved}`, detail: `${formatSize(before)} → ${formatSize(after)}` };
+  } else if (results.length && results.every((r) => r.alreadySmall)) {
+    status = { state: 'same', message: 'Already small', detail: 'Nothing to save' };
+  } else {
+    status = { state: 'error', message: (results.find((r) => r.error) || {}).error || 'Nothing to compress' };
+  }
+
+  if (backgrounded || !overlay.isVisible()) {
+    const title = { done: `Compressed (${label})`, same: 'Already small', error: 'Compression failed' }[status.state];
+    const body = status.state === 'done'
+      ? `${ok.length === 1 ? path.basename(ok[0].output) : `${ok.length} files`}: ${status.detail} (${saved})`
+      : status.detail || status.message;
+    notify(title, body, ok[0] && ok[0].output);
+  } else {
+    overlay.webContents.send('overlay:status', status);
+    setTimeout(closeOverlay, status.state === 'error' ? 2200 : 1600);
+  }
 }
 
 let dropWaiter = null;
@@ -209,6 +256,7 @@ async function runConversion(files, target) {
 
   const results = await convertAll(files, target);
   clearTimeout(slow);
+  debug('convert results', results);
   const ok = results.filter((r) => r.output);
   const message = ok.length === 1
     ? `Saved ${path.basename(ok[0].output)}${ok[0].count > 1 ? ` (+${ok[0].count - 1} pages)` : ''}`
@@ -298,7 +346,9 @@ function notify(title, body, file) {
   n.show();
 }
 
-async function convertAll(paths, target) {
+// Runs `work(input, onProgress)` on each file in turn, tracking progress in the tray.
+// `work` resolves with { outputs: [paths], ...extra }; failures are collected, not thrown.
+async function processAll(paths, work) {
   const results = [];
   for (const input of paths) {
     const id = Symbol(input);
@@ -306,22 +356,25 @@ async function convertAll(paths, target) {
     updateTray();
     let lastUpdate = 0;
     try {
-      const output = await convert(input, target, (p) => {
+      const { outputs, ...extra } = await work(input, (p) => {
         active.set(id, p);
         if (Date.now() - lastUpdate > 500) { lastUpdate = Date.now(); updateTray(); }
       });
-      const outputs = Array.isArray(output) ? output : [output];
       recent.unshift(...outputs);
       recent.splice(8);
-      results.push({ input, output: outputs[0], count: outputs.length });
+      results.push({ input, output: outputs[0], count: outputs.length, ...extra });
     } catch (err) {
-      results.push({ input, error: err.message });
+      results.push({ input, error: err.message, alreadySmall: !!err.alreadySmall });
     } finally {
       active.delete(id);
       updateTray();
     }
   }
   return results;
+}
+
+function convertAll(paths, target) {
+  return processAll(paths, async (input, onProgress) => ({ outputs: [].concat(await convert(input, target, onProgress)) }));
 }
 
 
@@ -347,7 +400,7 @@ ipcMain.on('overlay:drop', (_e, paths) => {
 ipcMain.handle('targets:mime', (_e, mime) => {
   const id = fromMime(mime);
   const { targets, moreWithLibreOffice } = targetsFor(id);
-  return { format: id ? FORMATS[id].label : null, name: null, targets, moreWithLibreOffice };
+  return { format: id ? FORMATS[id].label : null, name: null, targets, moreWithLibreOffice, compress: compressLevels(id) };
 });
 
 async function selfTest(dir) {
@@ -361,6 +414,14 @@ async function selfTest(dir) {
         lines.push(`OK   ${name} -> ${t.id}: ${[].concat(out).map((o) => path.basename(o)).join(', ')}`);
       } catch (err) {
         lines.push(`FAIL ${name} -> ${t.id}: ${err.message}`);
+      }
+    }
+    for (const l of compressLevels(id)) {
+      try {
+        const r = await compress(input, l.id);
+        lines.push(`OK   ${name} compress ${l.id}: ${path.basename(r.output)} (${r.before} -> ${r.after} bytes)`);
+      } catch (err) {
+        lines.push(`${err.alreadySmall ? 'OK  ' : 'FAIL'} ${name} compress ${l.id}: ${err.message}`);
       }
     }
   }

@@ -1,7 +1,8 @@
 // Builds the installers people share:
-//   release/I love files - Mac (Apple Silicon).dmg
-//   release/I love files - Mac (Intel).dmg
-//   release/I love files - Windows Setup.exe
+//   release/I-love-files-Mac-Apple-Silicon.dmg
+//   release/I-love-files-Mac-Intel.dmg
+//   release/I-love-files-Windows-Setup.exe
+// Web-safe names (no spaces): GitHub rewrites spaces in release asset names, which would break download links.
 // Usage: npm run release            (all)    |   node scripts/build.js mac-arm64 win-x64   (some)
 //
 // sharp and ffmpeg ship one native binary per platform, so each installer gets only its own:
@@ -14,9 +15,9 @@ const root = path.join(__dirname, '..');
 const pkg = require('../package.json');
 
 const TARGETS = {
-  'mac-arm64': { platform: Platform.MAC, arch: Arch.arm64, img: 'darwin-arm64', ffmpeg: 'darwin-arm64', out: 'Mac (Apple Silicon)', ext: 'dmg' },
-  'mac-x64':   { platform: Platform.MAC, arch: Arch.x64,   img: 'darwin-x64',   ffmpeg: 'darwin-x64',   out: 'Mac (Intel)', ext: 'dmg' },
-  'win-x64':   { platform: Platform.WINDOWS, arch: Arch.x64, img: 'win32-x64',  ffmpeg: 'win32-x64',    out: 'Windows Setup', ext: 'exe' },
+  'mac-arm64': { platform: Platform.MAC, arch: Arch.arm64, img: 'darwin-arm64', ffmpeg: 'darwin-arm64', out: 'Mac-Apple-Silicon', ext: 'dmg' },
+  'mac-x64':   { platform: Platform.MAC, arch: Arch.x64,   img: 'darwin-x64',   ffmpeg: 'darwin-x64',   out: 'Mac-Intel', ext: 'dmg' },
+  'win-x64':   { platform: Platform.WINDOWS, arch: Arch.x64, img: 'win32-x64',  ffmpeg: 'win32-x64',    out: 'Windows-Setup', ext: 'exe' },
 };
 
 function checkBinaries(t) {
@@ -48,11 +49,12 @@ async function buildTarget(name) {
       '!node_modules/@napi-rs/**',
     ],
     extraResources: [{ from: `vendor/ffmpeg/${t.ffmpeg}`, to: 'ffmpeg' }],
-    artifactName: `\${productName} - ${t.out}.\${ext}`,
+    artifactName: `I-love-files-${t.out}.\${ext}`,
   };
 
   console.log(`\n=== Building ${t.out} ===`);
-  const artifacts = await build({ targets: t.platform.createTarget(t.ext === 'dmg' ? 'dmg' : 'nsis', t.arch), config });
+  // publish: 'never': electron-builder would otherwise try to upload to the GitHub remote when run as `npm run release`.
+  const artifacts = await build({ targets: t.platform.createTarget(t.ext === 'dmg' ? 'dmg' : 'nsis', t.arch), config, publish: 'never' });
   const file = artifacts.find((a) => a.endsWith(`.${t.ext}`));
   fs.mkdirSync(path.join(root, 'release'), { recursive: true });
   const dest = path.join(root, 'release', path.basename(file));

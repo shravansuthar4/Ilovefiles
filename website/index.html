@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I love files</title>
+<meta name="description" content="Convert any file by dragging it. Drag, press C, drop on a format. Free for Mac and Windows.">
+<meta property="og:title" content="I love files">
+<meta property="og:description" content="Drag any file, press C, drop it on a format. Converted.">
+<meta property="og:image" content="assets/ring.jpg">
+<link rel="icon" href="assets/icon.png">
+<script>
+  // Apply the saved theme before first paint, so there's no flash.
+  try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+  :root {
+    --bg: #fbfbfd; --surface: #ffffff; --text: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea;
+    --accent: #0a6cff; --accent-text: #ffffff; --pink: #ff4f7e; --chip: #f2f2f5;
+    --shadow: 0 20px 50px rgba(30, 20, 80, 0.14);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0b0f; --surface: #16161c; --text: #f5f5f7; --muted: #9a9aa3; --line: #2a2a33;
+      --accent: #3d8bff; --accent-text: #ffffff; --chip: #1e1e26;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0b0f; --surface: #16161c; --text: #f5f5f7; --muted: #9a9aa3; --line: #2a2a33;
+    --accent: #3d8bff; --accent-text: #ffffff; --chip: #1e1e26;
+    --shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; transition: background 0.2s, color 0.2s;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+
+  /* top bar */
+  header { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; text-decoration: none; }
+  .brand img { width: 28px; height: 28px; }
+  .bar-right { display: flex; align-items: center; gap: 6px; }
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--text);
+    cursor: pointer; text-decoration: none;
+  }
+  .icon-btn:hover { background: var(--chip); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .moon { display: none; }
+  :root[data-theme="dark"] .sun { display: none; }
+  :root[data-theme="dark"] .moon { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .sun { display: none; }
+    :root:not([data-theme="light"]) .moon { display: block; }
+  }
+
+  /* hero */
+  .hero { text-align: center; padding: 56px 0 28px; }
+  .hero .app-icon { width: 112px; height: 112px; filter: drop-shadow(0 14px 28px rgba(80, 50, 200, 0.25)); }
+  h1 { font-size: clamp(40px, 8vw, 64px); line-height: 1.05; letter-spacing: -0.03em; margin: 22px 0 12px; }
+  .lede { font-size: clamp(19px, 3vw, 23px); color: var(--muted); margin: 0 auto; max-width: 560px; }
+  .lede b { color: var(--text); font-weight: 600; }
+  kbd {
+    font: 600 0.85em/1 inherit; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line);
+    border-bottom-width: 2px; background: var(--surface); color: var(--text);
+  }
+
+  /* downloads */
+  .downloads { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 34px 0 12px; }
+  .dl {
+    display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 999px;
+    font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: var(--surface);
+    color: var(--text); transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .dl:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); }
+  .dl.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .dl svg { width: 18px; height: 18px; flex: none; }
+  .dl small { font-weight: 500; opacity: 0.75; }
+  .meta { text-align: center; color: var(--muted); font-size: 14px; margin: 0; }
+  .meta a { color: var(--muted); }
+  .meta .sep { margin: 0 8px; opacity: 0.5; }
+
+  /* product shot */
+  .shot { margin: 48px auto 0; max-width: 520px; }
+  .shot img { display: block; width: 100%; height: auto; border-radius: 28px; box-shadow: var(--shadow); }
+
+  /* steps */
+  section { padding: 72px 0 0; }
+  h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.02em; text-align: center; margin: 0 0 32px; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; list-style: none; padding: 0; margin: 0; }
+  .step { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+  .step .n {
+    display: inline-flex; width: 28px; height: 28px; border-radius: 50%; align-items: center; justify-content: center;
+    background: var(--pink); color: #fff; font-weight: 700; font-size: 14px; margin-bottom: 12px;
+  }
+  .step h3 { margin: 0 0 6px; font-size: 19px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15.5px; }
+
+  /* formats */
+  .formats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .fmt h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { background: var(--chip); border-radius: 8px; padding: 3px 9px; font-size: 13.5px; font-weight: 600; }
+  .note { text-align: center; color: var(--muted); font-size: 15px; margin: 22px auto 0; max-width: 620px; }
+
+  /* first launch */
+  .first { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .teal { color: #0d9488; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .teal { color: #2dd4bf; } }
+  :root[data-theme="dark"] .teal { color: #2dd4bf; }
+  ol.install { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+  ol.install li { counter-increment: step; position: relative; padding-left: 34px; margin-bottom: 12px;
+    color: var(--muted); font-size: 15px; }
+  ol.install li:last-child { margin-bottom: 0; }
+  ol.install li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 22px; height: 22px;
+    border-radius: 50%; background: var(--pink); color: #fff; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; }
+  html { scroll-behavior: smooth; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+  .card h3 { margin: 0 0 8px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card b { color: var(--text); font-weight: 600; }
+
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 72px 0 40px; }
+  footer a { color: var(--muted); }
+  .heart { color: var(--pink); }
+
+  @media (max-width: 760px) {
+    .steps, .first, .levels { grid-template-columns: 1fr; }
+    .formats { grid-template-columns: 1fr 1fr; }
+    .hero { padding-top: 32px; }
+    .dl { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="brand" href="./"><img src="assets/icon.png" alt="">I love files</a>
+    <div class="bar-right">
+      <a class="icon-btn" href="https://github.com/shravansuthar4/Ilovefiles" target="_blank" rel="noopener" aria-label="Source code on GitHub" title="GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+      </a>
+      <button class="icon-btn" id="theme" aria-label="Switch light or dark mode" title="Light / dark">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <img class="app-icon" src="assets/icon.png" alt="I love files app icon">
+      <h1>I love files</h1>
+      <p class="lede">Convert any file by dragging it.<br><b>Drag, press <kbd>C</kbd>, drop.</b> The new file appears right next to the original.</p>
+
+      <div class="downloads" id="downloads">
+        <a class="dl" id="dl-mac" data-os="mac" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1E5DnybwRr_3JA_ZoKSLFp-hV9gCg-qe_" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          Download for Mac <small id="mac-chip">Apple silicon</small>
+        </a>
+        <a class="dl" id="dl-win" data-os="win" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1MrhVnE4hhYM2BcOfvbe-tzMeNf3tdQip" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          Download for Windows
+        </a>
+      </div>
+      <p class="meta">
+        Free<span class="sep">·</span>macOS &amp; Windows 10/11<span class="sep">·</span>
+        <a href="#install">How to install</a><span class="sep">·</span>
+        <a href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1gBg3wkQQt7oHA_7aMnOFFfbb9DApeE8w" download>Install guide (PDF)</a>
+      </p>
+
+      <div class="shot">
+        <img src="assets/ring.jpg" width="480" height="480"
+          alt="A translucent ring of formats around a dragged photo. The PNG zone is highlighted blue.">
+      </div>
+    </div>
+
+    <section aria-labelledby="how">
+      <h2 id="how">Three moves. That’s it.</h2>
+      <ol class="steps">
+        <li class="step"><span class="n">1</span><h3>Drag a file</h3><p>Any photo, song, video, Word document or PDF, from Finder, Explorer or the desktop.</p></li>
+        <li class="step"><span class="n">2</span><h3>Press <kbd>C</kbd></h3><p>While still holding it. A glass ring of every format it can become appears around it.</p></li>
+        <li class="step"><span class="n">3</span><h3>Drop on a format</h3><p>It lights up blue; let go. The new copy lands next to the original, which stays untouched.</p></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="what">
+      <h2 id="what">Works with the files you use</h2>
+      <div class="formats">
+        <div class="fmt"><h3>Images</h3><div class="chips"><span>JPG</span><span>PNG</span><span>PDF</span><span>WEBP</span><span>GIF</span><span>AVIF</span><span>TIFF</span><span>BMP</span><span>ICO</span><span>HEIC</span></div></div>
+        <div class="fmt"><h3>Music</h3><div class="chips"><span>MP3</span><span>WAV</span><span>M4A</span><span>FLAC</span><span>OGG</span><span>OPUS</span><span>AIFF</span><span>WMA</span></div></div>
+        <div class="fmt"><h3>Video</h3><div class="chips"><span>MP4</span><span>MOV</span><span>MKV</span><span>WEBM</span><span>AVI</span><span>WMV</span><span>→ GIF</span><span>→ MP3</span></div></div>
+        <div class="fmt"><h3>Documents</h3><div class="chips"><span>DOCX</span><span>PDF</span><span>TXT</span><span>HTML</span><span>MD</span><span>PDF → PNG</span></div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="smaller">
+      <h2 id="smaller">Or make them smaller</h2>
+      <p class="note" style="margin:-16px auto 24px">Drop on the outer <b class="teal">teal ring</b> to compress photos, videos, music, PDFs and Word or PowerPoint files.</p>
+      <div class="levels">
+        <div class="card"><h3>Light</h3><p>Looks and sounds the same. Often half the size.</p></div>
+        <div class="card"><h3>Balanced</h3><p>A tiny, usually invisible trade-off for a much smaller file.</p></div>
+        <div class="card"><h3>Smallest</h3><p>Maximum saving, for sharing and email.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="install">
+      <h2 id="install">How to install</h2>
+      <div class="first">
+        <div class="card">
+          <h3>Mac</h3>
+          <ol class="install">
+            <li>Click <b>Download for Mac</b> and open the downloaded <b>.dmg</b> file.</li>
+            <li>Drag the <b>I love files</b> icon onto the <b>Applications</b> folder.</li>
+            <li>Open <b>Applications</b> and double-click <b>I love files</b>. If your Mac says it can’t verify the app, click <b>Done</b>.</li>
+            <li>Go to <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>, then <b>Open</b>. Only needed the first time.</li>
+            <li>When asked, switch on <b>Accessibility</b> for I love files, so it can notice the <kbd>C</kbd> key.</li>
+            <li>A <b>♡</b> appears in the menu bar. Done: it starts by itself from now on.</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3>Windows</h3>
+          <ol class="install">
+            <li>Click <b>Download for Windows</b> and open <b>I-love-files-Windows-Setup.exe</b>.</li>
+            <li>If you see <b>“Windows protected your PC”</b>, click <b>More info</b>, then <b>Run anyway</b>.</li>
+            <li>It installs by itself in a few seconds. There’s nothing to click through.</li>
+            <li>A pink <b>♡</b> appears in the system tray, by the clock (it may be under the <b>^</b> arrow). It starts with Windows from now on.</li>
+          </ol>
+        </div>
+      </div>
+      <p class="note">Uninstall: on Mac, quit from the ♡ menu and drag the app to the Bin. On Windows, use <b>Settings → Apps → I love files → Uninstall</b>.</p>
+    </section>
+  </main>
+
+  <footer>
+    Made with <span class="heart">♡</span> by Shravan<span class="sep" style="margin:0 8px;opacity:.5">·</span><a href="https://github.com/shravansuthar4/Ilovefiles" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+</div>
+
+<script>
+  // Light / dark toggle: follows the system until the visitor picks one.
+  document.getElementById('theme').addEventListener('click', () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
+  });
+
+  // Highlight the download for this visitor's computer.
+  (function () {
+    const ua = navigator.userAgent;
+    const os = /Windows/.test(ua) ? 'win' : /Macintosh|Mac OS X/.test(ua) ? 'mac' : null;
+    const mac = document.getElementById('dl-mac'), win = document.getElementById('dl-win');
+    const primary = os === 'win' ? win : mac;
+    primary.classList.add('primary');
+    if (os === 'win') document.getElementById('downloads').prepend(win);
+  })();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-// End-to-end conversion test: creates sample files of every kind in a temp folder, converts each to
-// every target the ring would offer, and checks the outputs. Runs inside Electron because the
-// PDF engines need Chromium.  Usage: npm test
+// End-to-end test: creates sample files of every kind in a temp folder, converts each to every
+// target the ring would offer, compresses each at every level, and checks the outputs. Runs inside
+// Electron because the PDF engines need Chromium.  Usage: npm test
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -9,6 +9,7 @@ const { app } = require('electron');
 const sharp = require('sharp');
 const ffmpeg = require('ffmpeg-static');
 const { convert, detect, targetsFor } = require('../src/main/converter');
+const { compress, compressLevels } = require('../src/main/compressor');
 
 async function makeSamples(dir) {
   const f = (n) => path.join(dir, n);
@@ -21,6 +22,16 @@ async function makeSamples(dir) {
   // A real .docx needs Word or macOS's textutil; skipped elsewhere.
   if (process.platform === 'darwin') execFileSync('textutil', ['-convert', 'docx', f('long.txt'), '-output', f('letter.docx')]);
   await convert(f('long.txt'), 'pdf'); // multi-page PDF sample (long.pdf)
+
+  // Big, high-quality samples so compression has something to save.
+  const photo = await sharp({ create: { width: 2400, height: 1600, channels: 3, noise: { type: 'gaussian', mean: 128, sigma: 50 } } })
+    .blur(3).jpeg({ quality: 97 }).toBuffer();
+  fs.writeFileSync(f('photo.jpg'), photo);
+  const { PDFDocument } = require('pdf-lib');
+  const doc = await PDFDocument.create();
+  const embedded = await doc.embedJpg(photo);
+  doc.addPage([595, 842]).drawImage(embedded, { x: 50, y: 300, width: 495, height: 330 });
+  fs.writeFileSync(f('scan.pdf'), await doc.save());
 }
 
 app.on('window-all-closed', () => {});
@@ -39,8 +50,24 @@ app.whenReady().then(async () => {
           if (!ok) throw new Error('empty output');
           passed++;
         } catch (err) {
+          if (name === 'scan.pdf' && to === 'txt' && /no text/.test(err.message)) { passed++; continue; } // expected
           failed++;
           console.log(`FAIL ${name} -> ${to}: ${err.message}`);
+        }
+      }
+    }
+    // Compression: every level must produce a smaller file, or report that the file is already small.
+    for (const name of fs.readdirSync(dir).filter((n) => !/\(compressed\)|\(\d+\)/.test(n)).sort()) {
+      const input = path.join(dir, name);
+      for (const { id: level } of compressLevels(await detect(input))) {
+        try {
+          const r = await compress(input, level);
+          if (!(r.after < r.before) || !fs.existsSync(r.output)) throw new Error('not smaller');
+          passed++;
+        } catch (err) {
+          if (err.alreadySmall) { passed++; continue; }
+          failed++;
+          console.log(`FAIL ${name} compress ${level}: ${err.message}`);
         }
       }
     }

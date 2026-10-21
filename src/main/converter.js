@@ -131,10 +131,11 @@ const FFMPEG_ARGS = {
 
 const toSeconds = (t) => t.split(':').reduce((acc, v) => acc * 60 + parseFloat(v), 0);
 
-async function ffmpegConvert(input, output, from, to, onProgress) {
+// Runs ffmpeg on `input` with `args`, reporting progress 0..1 from its stderr.
+async function runFfmpeg(input, args, output, onProgress) {
   let duration = 0;
   try {
-    await run(FFMPEG, ['-nostdin', '-y', '-hide_banner', '-i', input, ...FFMPEG_ARGS[to], output], (chunk) => {
+    await run(FFMPEG, ['-nostdin', '-y', '-hide_banner', '-i', input, ...args, output], (chunk) => {
       const d = chunk.match(/Duration: (\d+:\d+:[\d.]+)/);
       if (d) duration = toSeconds(d[1]);
       const t = chunk.match(/time=(\d+:\d+:[\d.]+)/);
@@ -144,6 +145,10 @@ async function ffmpegConvert(input, output, from, to, onProgress) {
     fs.promises.rm(output, { force: true }); // don't leave a half-written file behind
     throw err;
   }
+}
+
+function ffmpegConvert(input, output, from, to, onProgress) {
+  return runFfmpeg(input, FFMPEG_ARGS[to], output, onProgress);
 }
 
 // ---------- office documents (LibreOffice, if installed) ----------
@@ -178,12 +183,21 @@ async function libreOfficeConvert(input, output, from, to) {
 const escapeHtml = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const page = (body) => `<!doctype html><meta charset="utf-8"><style>
   body { font: 11pt/1.5 -apple-system, "Segoe UI", Arial, sans-serif; max-width: 48em; margin: 2em auto; color: #111; }
-  img { max-width: 100%; } table { border-collapse: collapse; } td, th { border: 1px solid #ccc; padding: 4px 8px; }
+  img { max-width: 100%; } table { border-collapse: collapse; margin: 0.8em 0; }
+  td, th { border: 1px solid #ccc; padding: 4px 8px; vertical-align: top; }
+  td > p, th > p { margin: 0; } /* Word puts every cell's text in a paragraph */
+  h1.title { font-size: 26pt; margin: 0 0 0.3em; } p.subtitle { font-size: 14pt; color: #555; margin-top: 0; }
   pre { white-space: pre-wrap; font: 10pt/1.45 Menlo, Consolas, monospace; }
 </style>${body}`;
 
+// Word styles mammoth doesn't map on its own.
+const DOCX_STYLES = [
+  "p[style-name='Title'] => h1.title:fresh",
+  "p[style-name='Subtitle'] => p.subtitle:fresh",
+];
+
 async function toHtml(input, from) {
-  if (from === 'docx') return page((await require('mammoth').convertToHtml({ path: input })).value);
+  if (from === 'docx') return page((await require('mammoth').convertToHtml({ path: input }, { styleMap: DOCX_STYLES })).value);
   const text = await fs.promises.readFile(input, 'utf8');
   if (from === 'md') return page(require('marked').marked.parse(text));
   if (from === 'txt') return page(`<pre>${escapeHtml(text)}</pre>`);
@@ -206,7 +220,11 @@ async function builtinDocConvert(input, output, from, to) {
 
 // PDF -> images (one file per page) or text.
 async function pdfConvert(input, output, from, to) {
-  if (to === 'txt') return fs.promises.writeFile(output, await electronTools().pdfText(input));
+  if (to === 'txt') {
+    const text = await electronTools().pdfText(input);
+    if (!text.trim()) throw new Error('This PDF has no text (it may be a scan)');
+    return fs.promises.writeFile(output, text);
+  }
   const pages = await electronTools().renderPdf(input, to === 'jpg' ? 'image/jpeg' : 'image/png');
   if (pages.length === 1) return fs.promises.writeFile(output, pages[0]);
   const { dir, name, ext } = path.parse(output);
@@ -299,4 +317,8 @@ async function convert(input, to, onProgress) {
   return Array.isArray(result) ? result : output;
 }
 
-module.exports = { detect, convert, targetsFor, hasLibreOffice };
+module.exports = {
+  detect, convert, targetsFor, hasLibreOffice,
+  // shared with compressor.js
+  run, runFfmpeg, withTempDir, uniquePath, sharpSource,
+};

@@ -1,8 +1,9 @@
-// A translucent ring of formats around the dragged file. The main process streams the cursor
-// position; whichever zone is under it turns blue, and releasing the mouse there converts.
+// A translucent ring of formats around the dragged file, plus an outer ring of compress levels.
+// The main process streams the cursor position; whichever zone is under it turns blue, and
+// releasing the mouse there converts (or compresses).
 const svg = document.getElementById('svg');
 const NS = 'http://www.w3.org/2000/svg';
-const C = 240;          // centre of the 480×480 window = where the file is
+const C = 300;          // centre of the 600×600 window = where the file is
 const HOLE = 62;        // the file sits in the hole; letting go there cancels
 const GAP = 8;          // px between zones
 
@@ -59,13 +60,21 @@ function sector(r1, r2, a0, a1) {
 }
 
 // Up to 8 formats form one ring; more are split across an inner and an outer ring.
-function layout(items) {
-  if (items.length <= 8) return [{ r1: HOLE + 6, r2: 168, font: 17, items }];
-  const inner = Math.ceil(items.length / 2);
-  return [
-    { r1: HOLE + 6, r2: 150, font: 15, items: items.slice(0, inner) },
-    { r1: 154, r2: 232, font: 13.5, items: items.slice(inner) },
-  ];
+// Compress levels, when the file can be compressed, get a ring of their own outside those.
+function layout(items, compress) {
+  const rings = [];
+  if (items.length <= 8) {
+    if (items.length) rings.push({ r1: HOLE + 6, r2: 168, font: 17, items });
+  } else {
+    const inner = Math.ceil(items.length / 2);
+    rings.push({ r1: HOLE + 6, r2: 150, font: 15, items: items.slice(0, inner) },
+      { r1: 154, r2: 232, font: 13.5, items: items.slice(inner) });
+  }
+  if (compress.length) {
+    const r1 = (rings.length ? rings[rings.length - 1].r2 : HOLE + 2) + 8;
+    rings.push({ r1, r2: r1 + 50, font: 14, items: compress, compress: true });
+  }
+  return rings;
 }
 
 // One glass shape: frosted body, top sheen, light-catching rim.
@@ -106,22 +115,28 @@ function render(info) {
 
   const items = info.targets.map((t) => ({ id: t.id, label: t.label }));
   if (info.moreWithLibreOffice) items.push({ id: 'libreoffice', label: 'More…', hint: true });
-  if (!items.length) {
+  const compress = (info.compress || []).map((l) => ({ id: `compress:${l.id}`, label: l.label }));
+  if (!items.length && !compress.length) {
     svg.append(center([...fileLabel(info), node('text', { x: C, y: C + 32, 'font-size': 10, class: 'err' }, ['No conversions'])]));
     return;
   }
 
   const ring = node('g', { class: 'ring' });
-  for (const r of layout(items)) {
+  for (const r of layout(items, compress)) {
     const span = (2 * Math.PI) / r.items.length;
     // First zone centred at the top, then clockwise.
     r.items.forEach((item, i) => {
       const a0 = -Math.PI / 2 - span / 2 + i * span, a1 = a0 + span;
       const mid = (a0 + a1) / 2, rm = (r.r1 + r.r2) / 2;
       const [tx, ty] = polar(rm, mid);
-      const el = node('g', { class: `zone${item.hint ? ' hint' : ''}` }, [node('g', {}, [
+      // Compress zones carry a small "compress" caption under the level name.
+      const labels = r.compress
+        ? [node('text', { x: tx, y: ty - 6, 'font-size': r.font }, [item.label]),
+          node('text', { x: tx, y: ty + 10, 'font-size': 8.5, class: 'caption' }, ['COMPRESS'])]
+        : [node('text', { x: tx, y: ty, 'font-size': item.hint ? 11 : r.font }, [item.label])];
+      const el = node('g', { class: `zone${item.hint ? ' hint' : ''}${r.compress ? ' compress' : ''}` }, [node('g', {}, [
         ...glass('path', { d: sector(r.r1, r.r2, a0, a1) }),
-        node('text', { x: tx, y: ty, 'font-size': item.hint ? 11 : r.font }, [item.label]),
+        ...labels,
       ])]);
       el.dataset.dx = Math.cos(mid) * 6;
       el.dataset.dy = Math.sin(mid) * 6;
@@ -157,7 +172,8 @@ function setHovered(zone) {
   window.dc.hover(id);
 }
 
-function showStatus({ state, message }) {
+// state: working | done | same (nothing to gain) | error.  `detail` adds a small second line.
+function showStatus({ state, message, detail }) {
   locked = true;
   const hole = svg.querySelector('.center');
   if (!hole) return;
@@ -166,11 +182,13 @@ function showStatus({ state, message }) {
       node('path', { class: 'spin', d: `M${C},${C - 18} A18,18 0 1 1 ${C - 18},${C}` }));
     return;
   }
-  const ok = state === 'done';
-  const short = message.length > 22 ? message.slice(0, 21) + '…' : message;
+  const icon = { done: ['✓', 'ok'], same: ['=', 'same'], error: ['✗', 'err'] }[state] || ['✗', 'err'];
+  const fit = (t, n) => (t.length > n ? t.slice(0, n - 1) + '…' : t);
+  const text = state === 'done' ? message.replace(/^Saved /, '') : message;
   hole.replaceChildren(...lens(),
-    node('text', { x: C, y: C - 12, 'font-size': 22, class: ok ? 'ok' : 'err' }, [ok ? '✓' : '✗']),
-    node('text', { x: C, y: C + 14, 'font-size': 10, class: 'status' }, [ok ? short.replace(/^Saved /, '') : short]));
+    node('text', { x: C, y: C - (detail ? 18 : 12), 'font-size': 22, class: icon[1] }, [icon[0]]),
+    node('text', { x: C, y: C + (detail ? 6 : 14), 'font-size': detail ? 13 : 10, class: 'status' }, [fit(text, 22)]),
+    ...(detail ? [node('text', { x: C, y: C + 22, 'font-size': 9, class: 'caption' }, [fit(detail, 26)])] : []));
 }
 
 window.dc.on('overlay:shown', render);

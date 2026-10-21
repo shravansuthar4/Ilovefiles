@@ -10,14 +10,15 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/ring.png" width="360" alt="The liquid-glass format ring around a dragged photo, with PNG highlighted">
+  <img src="docs/images/ring.jpg" width="360" alt="The liquid-glass format ring around a dragged photo, with PNG highlighted">
 </p>
 
 ## How it works
 
 1. Start dragging any file (from Finder, Explorer or the desktop).
 2. While still holding it, press **C**. A liquid-glass ring of the formats it can become appears around the file.
-3. Move onto a format (it turns blue) and let go. The converted copy appears next to the original.
+3. Move onto a format (it turns blue) and let go. Or move onto the outer teal ring to **compress** instead:
+   **Light**, **Balanced** or **Smallest**. The converted copy appears next to the original.
    The original is never changed and nothing is overwritten (`photo (1).png`). Let go in the centre, or press
    <kbd>Esc</kbd>, to cancel.
 
@@ -26,13 +27,14 @@ progress there. Long conversions (video) keep running in the background and fini
 
 ## Download
 
-Get the installers from the [**Releases**](../../releases) page, along with `Install Guide.pdf`:
+The [website](website/) picks the right download for your computer. Or get the installers from the
+[**Releases**](../../releases) page, along with `Install-Guide.pdf`:
 
 | Installer | For |
 |---|---|
-| `I love files - Mac (Apple Silicon).dmg` | Macs with M-series chips |
-| `I love files - Mac (Intel).dmg` | Intel Macs |
-| `I love files - Windows Setup.exe` | Windows 10 / 11 |
+| `I-love-files-Mac-Apple-Silicon.dmg` | Macs with M-series chips |
+| `I-love-files-Mac-Intel.dmg` | Intel Macs |
+| `I-love-files-Windows-Setup.exe` | Windows 10 / 11 |
 
 The builds aren't signed with an Apple Developer ID or a Windows code-signing certificate, so the first launch
 needs one extra click (**Open Anyway** on Mac, **More info → Run anyway** on Windows), as the guide explains.
@@ -50,6 +52,23 @@ On macOS the app asks for **Accessibility** permission so it can notice the C ke
 
 LibreOffice is detected automatically; when it's missing, the ring shows a **More…** shortcut to download it.
 
+## Compression
+
+The outer ring compresses instead of converting. The copy is saved as `name (compressed).ext`, and the centre
+of the ring shows the result (e.g. `−75% · 4.8 MB → 1.2 MB`). If a file can't get meaningfully smaller, nothing
+is saved and the ring says **Already small**.
+
+| Kind | How | Light | Balanced | Smallest |
+|---|---|---|---|---|
+| Photos (JPG PNG WEBP AVIF GIF TIFF) | re-encode in the same format, strip metadata (colour profile kept) | high quality, PNG lossless | fewer colours / lower quality, ≤ 3000 px | ≤ 2000 px |
+| Video (MP4 MOV MKV WEBM; AVI/WMV → MP4) | H.264 / VP9 at a higher CRF | same size | ≤ 1080p | ≤ 720p |
+| Audio | lower bitrate, same format; WAV/AIFF/FLAC → FLAC (lossless) or AAC | ~192 kbps / FLAC | ~128 kbps | ~64–80 kbps |
+| PDF | pictures inside re-compressed as JPEG; text and drawings untouched | quality 80 | quality 65, ≤ 2000 px | quality 45, ≤ 1300 px |
+| DOCX PPTX XLSX (+ ODT ODP ODS) | pictures inside re-compressed in place | as photos | as photos | as photos |
+
+Limits: text-only PDFs and documents are already small; PDF pictures in CMYK, JPEG 2000, JBIG2 or with
+special decode settings are left as they are; password-protected PDFs can't be compressed.
+
 ## Project structure
 
 ```
@@ -59,6 +78,7 @@ i-love-files/
 │   │   ├── main.js           app lifecycle, tray, global drag + C detection, ring window, conversions
 │   │   ├── drag-source.js    finds the dragged file (macOS drag pasteboard / Windows Explorer selection)
 │   │   ├── converter.js      conversion engines: sharp, ffmpeg, LibreOffice, built-in docs & PDF
+│   │   ├── compressor.js     compression: images, video, audio, PDF pictures, Office pictures
 │   │   ├── electron-tools.js HTML → PDF printing and PDF rendering via hidden Chromium windows
 │   │   └── formats.js        every supported format (extensions, MIME types, kind)
 │   ├── preload/
@@ -70,12 +90,15 @@ i-love-files/
 ├── scripts/
 │   ├── fetch-binaries.js     downloads ffmpeg + sharp binaries for every target platform
 │   ├── build.js              builds the three installers into release/
-│   └── make-guide.js         prints docs/install-guide.html to release/Install Guide.pdf
+│   └── make-guide.js         prints docs/install-guide.html to release/Install-Guide.pdf
 ├── test/
-│   └── convert.test.js       end-to-end conversion test across all file kinds
+│   └── convert.test.js       end-to-end test: every conversion and every compress level
 ├── build/                    app icon (icon.svg source → icon.png), used by electron-builder
+├── website/                  the product website, ready to upload to any static host
+│   ├── index.html            single page: downloads for Mac & Windows, light/dark mode
+│   └── assets/               icon, screenshot, Install-Guide.pdf
 ├── docs/
-│   ├── install-guide.html    the user install guide (source of Install Guide.pdf)
+│   ├── install-guide.html    the user install guide (source of Install-Guide.pdf)
 │   └── images/               icon and screenshot used in the README and guide
 ├── package.json
 └── README.md
@@ -105,7 +128,7 @@ npm test
 ```
 
 Creates sample images, audio, video, Markdown, text, PDF (and on macOS a Word file), converts each to every
-format the ring offers, and fails if any conversion breaks.
+format the ring offers, compresses each at every level, and fails if anything breaks.
 
 ### How the drag is detected
 
@@ -122,7 +145,7 @@ npm run release
 ```
 
 This downloads any missing native binaries (`npm run setup`), builds all three installers into `release/` (from
-a Mac, the Windows one included) and prints `Install Guide.pdf` next to them. To publish, create a GitHub
+a Mac, the Windows one included) and prints `Install-Guide.pdf` next to them. To publish, create a GitHub
 Release and attach the three installers and the guide.
 
 Each installer carries only its own platform's native code (see `scripts/build.js`): its ffmpeg from
@@ -134,6 +157,24 @@ Self-test an installed build end to end (converts every file in a folder, writes
 
 ```bash
 ILF_SELFTEST=/path/to/sample/files "/Applications/I love files.app/Contents/MacOS/I love files"
+```
+
+## Website
+
+`website/` is a complete static site: `index.html` plus everything it uses in `website/assets/`. No build step and
+no external libraries, so it can be uploaded as-is to any web host (Netlify, Vercel, Cloudflare Pages, cPanel …).
+It follows the visitor's light/dark setting, has a toggle that remembers their choice, and highlights the download
+for their computer (Windows, Apple silicon or Intel Mac).
+
+The download buttons link to `releases/latest/download/<file>` on GitHub, so they always serve the newest Release,
+as long as each Release has these exact asset names (which `npm run release` produces):
+`I-love-files-Mac-Apple-Silicon.dmg`, `I-love-files-Mac-Intel.dmg`, `I-love-files-Windows-Setup.exe`.
+After changing the guide, copy `release/Install-Guide.pdf` to `website/assets/`.
+
+Preview locally:
+
+```bash
+python3 -m http.server 8123 --directory website
 ```
 
 ## Third-party software
