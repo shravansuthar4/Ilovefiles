@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I love files</title>
-<meta name="description" content="Convert any file by dragging it. Drag, press C, drop on a format. Free for Mac and Windows.">
+<meta name="description" content="Convert or compress any file by dragging it. Drag, press C, drop on a format or a compress level. Free for Mac and Windows.">
 <meta property="og:title" content="I love files">
-<meta property="og:description" content="Drag any file, press C, drop it on a format. Converted.">
+<meta property="og:description" content="Drag any file, press C, drop it on a format. Converted, or compressed.">
 <meta property="og:image" content="assets/ring.jpg">
 <link rel="icon" href="assets/icon.png">
 <script>
@@ -71,6 +71,7 @@
   h1 { font-size: clamp(40px, 8vw, 64px); line-height: 1.05; letter-spacing: -0.03em; margin: 22px 0 12px; }
   .lede { font-size: clamp(19px, 3vw, 23px); color: var(--muted); margin: 0 auto; max-width: 560px; }
   .lede b { color: var(--text); font-weight: 600; }
+  .sub { color: var(--muted); font-size: 15.5px; margin: 14px auto 0; max-width: 520px; }
   kbd {
     font: 600 0.85em/1 inherit; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line);
     border-bottom-width: 2px; background: var(--surface); color: var(--text);
@@ -165,7 +166,8 @@
     <div class="hero">
       <img class="app-icon" src="assets/icon.png" alt="I love files app icon">
       <h1>I love files</h1>
-      <p class="lede">Convert any file by dragging it.<br><b>Drag, press <kbd>C</kbd>, drop.</b> The new file appears right next to the original.</p>
+      <p class="lede">Convert or compress any file by dragging it.<br><b>Drag, press <kbd>C</kbd>, drop.</b> The new file appears right next to the original.</p>
+      <p class="sub">Drop on a format to convert, or on the outer <b class="teal">teal ring</b> to make it much smaller.</p>
 
       <div class="downloads" id="downloads">
         <a class="dl" id="dl-mac" href="https://drive.usercontent.google.com/download?export=download&amp;confirm=t&amp;id=1_kQ6FDK4SKQR9i8KT4WyrhIQcbAYvm44" download>
@@ -197,8 +199,8 @@
       <h2 id="how">Three moves. That’s it.</h2>
       <ol class="steps">
         <li class="step"><span class="n">1</span><h3>Drag a file</h3><p>Any photo, song, video, Word document or PDF, from Finder, Explorer or the desktop.</p></li>
-        <li class="step"><span class="n">2</span><h3>Press <kbd>C</kbd></h3><p>While still holding it. A glass ring of every format it can become appears around it.</p></li>
-        <li class="step"><span class="n">3</span><h3>Drop on a format</h3><p>It lights up blue; let go. The new copy lands next to the original, which stays untouched.</p></li>
+        <li class="step"><span class="n">2</span><h3>Press <kbd>C</kbd></h3><p>While still holding it. A glass ring appears: every format it can become, plus compress levels around the edge.</p></li>
+        <li class="step"><span class="n">3</span><h3>Drop to convert or compress</h3><p>Your choice lights up blue; let go. The new copy lands next to the original, which stays untouched.</p></li>
       </ol>
     </section>
 
